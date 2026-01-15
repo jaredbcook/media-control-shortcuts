@@ -17,6 +17,8 @@ Default keyboard shortcuts are listed below.
 | --- | --- |
 | **`k`** | Play/Pause |
 | **`m`** | Mute/Unmute |
+| **`]`** | Volume up |
+| **`[`** | Volume down |
 | **`l`** | Skip forward 10 seconds |
 | **`j`** | Skip backward 10 seconds |
 | **`.`** | Skip forward 5 seconds |

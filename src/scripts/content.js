@@ -1,6 +1,7 @@
-// TODO: add support for volume up/down
 const ACTION_PLAY_PAUSE = 'MCS_EXT_PLAY_PAUSE';
 const ACTION_MUTE_UNMUTE = 'MCS_EXT_MUTE_UNMUTE';
+const ACTION_VOLUME_UP = 'MCS_EXT_VOLUME_UP';
+const ACTION_VOLUME_DOWN = 'MCS_EXT_VOLUME_DOWN';
 const ACTION_SPEED_UP = 'MCS_EXT_SPEED_UP';
 const ACTION_SPEED_DOWN = 'MCS_EXT_SPEED_DOWN';
 const ACTION_SEEK_FWD_LARGE = 'MCS_EXT_SEEK_FWD_LARGE';
@@ -30,6 +31,8 @@ const ICON_SEEK_FWD_LARGE = '<svg xmlns="http://www.w3.org/2000/svg" height="24p
 const ICON_SEEK_BACK_LARGE = '<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#fff"><path d="m313-480 155 156q11 11 11.5 27.5T468-268q-11 11-28 11t-28-11L228-452q-6-6-8.5-13t-2.5-15q0-8 2.5-15t8.5-13l184-184q11-11 27.5-11.5T468-692q11 11 11 28t-11 28L313-480Zm264 0 155 156q11 11 11.5 27.5T732-268q-11 11-28 11t-28-11L492-452q-6-6-8.5-13t-2.5-15q0-8 2.5-15t8.5-13l184-184q11-11 27.5-11.5T732-692q11 11 11 28t-11 28L577-480Z"/></svg>';
 const ICON_SEEK_FWD_SMALL = '<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#fff"><path d="M504-480 348-636q-11-11-11-28t11-28q11-11 28-11t28 11l184 184q6 6 8.5 13t2.5 15q0 8-2.5 15t-8.5 13L404-268q-11 11-28 11t-28-11q-11-11-11-28t11-28l156-156Z"/></svg>';
 const ICON_SEEK_BACK_SMALL = '<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#fff"><path d="m432-480 156 156q11 11 11 28t-11 28q-11 11-28 11t-28-11L348-452q-6-6-8.5-13t-2.5-15q0-8 2.5-15t8.5-13l184-184q11-11 28-11t28 11q11 11 11 28t-11 28L432-480Z"/></svg>';
+const ICON_VOLUME_UP = '<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#fff"><path d="M560-131v-82q90-26 145-100t55-168q0-94-55-168T560-749v-82q124 28 202 125.5T840-481q0 127-78 224.5T560-131ZM120-360v-240h160l200-200v640L280-360H120Zm440 40v-322q47 22 73.5 66t26.5 96q0 51-26.5 94.5T560-320Z"/></svg>';
+const ICON_VOLUME_DOWN = '<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#fff"><path d="M200-360v-240h160l200-200v640L360-360H200Zm440 40v-322q45 21 72.5 65t27.5 97q0 53-27.5 96T640-320Z"/></svg>';
 
 // Default settings
 // TODO: make these configurable in the extension settings
@@ -39,6 +42,7 @@ let minSpeed = 0.25;
 let speedStep = 0.25;
 let seekStepLarge = 10; // in seconds
 let seekStepSmall = 5; // in seconds
+let volumeStep = 0.1; // volume step (0-1 scale)
 
 // Initialization --------------------------------------------------------------
 
@@ -86,7 +90,7 @@ observer.observe(document.body, { childList: true, subtree: true });
  * @returns {string[]} An array of supported keys.
  */
 function getSupportedKeys() {
-    return ['k', 'm', 'j', 'l', '<', '>', '.', ',', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
+    return ['k', 'm', 'j', 'l', '<', '>', '.', ',', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '[', ']'];
 }
 
 /**
@@ -220,6 +224,8 @@ function mapKeyToAction(key) {
     switch (key) {
         case 'k': return ACTION_PLAY_PAUSE;
         case 'm': return ACTION_MUTE_UNMUTE;
+        case ']': return ACTION_VOLUME_UP;
+        case '[': return ACTION_VOLUME_DOWN;
         case '>': return ACTION_SPEED_UP;
         case '<': return ACTION_SPEED_DOWN;
         case 'l': return ACTION_SEEK_FWD_LARGE;
@@ -247,6 +253,8 @@ function mapKeyToAction(key) {
  */
 function mapActionToChange(action) {
     switch (action) {
+        case ACTION_VOLUME_UP: return volumeStep;
+        case ACTION_VOLUME_DOWN: return -volumeStep;
         case ACTION_SPEED_UP: return speedStep;
         case ACTION_SPEED_DOWN: return -speedStep;
         case ACTION_SEEK_FWD_LARGE: return seekStepLarge;
@@ -293,6 +301,14 @@ function runAction(media, action) {
         showOverlay(media, action);
     } else if (action.type === ACTION_MUTE_UNMUTE) {
         toggleMediaMute(media);
+        showOverlay(media, action);
+    } else if (action.type === ACTION_VOLUME_UP) {
+        const newVolume = Math.min(1, media.volume + volumeStep);
+        setMediaVolume(media, newVolume);
+        showOverlay(media, action);
+    } else if (action.type === ACTION_VOLUME_DOWN) {
+        const newVolume = Math.max(0, media.volume - volumeStep);
+        setMediaVolume(media, newVolume);
         showOverlay(media, action);
     } else if (action.type === ACTION_SEEK_FWD_LARGE || action.type === ACTION_SEEK_BACK_LARGE || action.type === ACTION_SEEK_FWD_SMALL || action.type === ACTION_SEEK_BACK_SMALL) {
         media.currentTime += action.change;
@@ -392,6 +408,24 @@ function toggleMediaMute(media) {
 }
 
 /**
+ * Sets the volume of a media element
+ * @param {HTMLMediaElement} media The media element
+ * @param {number} volume The volume to set (0-1)
+ */
+function setMediaVolume(media, volume = 1) {
+    if (!media) return;
+    // Clamp volume between 0 and 1
+    const clampedVolume = Math.max(0, Math.min(1, volume));
+    if (media.volume !== clampedVolume) {
+        media.volume = clampedVolume;
+        // Unmute if volume is being increased from 0
+        if (clampedVolume > 0 && media.muted) {
+            media.muted = false;
+        }
+    }
+}
+
+/**
  * Shows an overlay with icon and optional action text on top of the video or audio element
  * TODO: make display of overlay configurable (on/off)
  * TODO: make font size and icon size dynamic based on element size, and/or make it configurable
@@ -412,6 +446,10 @@ function showOverlay(media, action = {}) {
         content = media.paused ? ICON_PAUSE : ICON_PLAY;
     } else if (action.type === ACTION_MUTE_UNMUTE) {
         content = media.muted ? ICON_MUTE : ICON_UNMUTE;
+    } else if (action.type === ACTION_VOLUME_UP || action.type === ACTION_VOLUME_DOWN) {
+        const volumePercent = Math.round(media.volume * 100);
+        const icon = action.type === ACTION_VOLUME_UP ? ICON_VOLUME_UP : ICON_VOLUME_DOWN;
+        content = `${icon}<span>${volumePercent}%</span>`;
     } else if (action.type === ACTION_SPEED_UP) {
         content = `${ICON_SPEED_UP}<span>${media.playbackRate}x</span>`;
     } else if (action.type === ACTION_SPEED_DOWN) {
@@ -471,9 +509,12 @@ if (typeof module !== 'undefined' && module.exports) {
         findMedia,
         getTargetMedia,
         runAction,
+        setMediaVolume,
         // Constants used in tests or logic if needed, though typically we just test behavior
         ACTION_PLAY_PAUSE,
         ACTION_MUTE_UNMUTE,
+        ACTION_VOLUME_UP,
+        ACTION_VOLUME_DOWN,
         ACTION_SPEED_UP,
         ACTION_SPEED_DOWN,
         ACTION_SEEK_FWD_LARGE,

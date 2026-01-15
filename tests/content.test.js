@@ -7,8 +7,11 @@ import {
     findMedia,
     getTargetMedia,
     runAction,
+    setMediaVolume,
     ACTION_PLAY_PAUSE,
     ACTION_MUTE_UNMUTE,
+    ACTION_VOLUME_UP,
+    ACTION_VOLUME_DOWN,
     ACTION_SPEED_UP,
     ACTION_SPEED_DOWN,
     ACTION_SEEK_FWD_LARGE,
@@ -26,6 +29,8 @@ describe('content.js', () => {
             expect(keys).toContain('m');
             expect(keys).toContain('j');
             expect(keys).toContain('l');
+            expect(keys).toContain('[');
+            expect(keys).toContain(']');
             // ... check a few others
             expect(keys.length).toBeGreaterThan(0);
         });
@@ -38,6 +43,12 @@ describe('content.js', () => {
         it('should map "m" to mute/unmute', () => {
             expect(mapKeyToAction('m')).toBe(ACTION_MUTE_UNMUTE);
         });
+        it('should map "]" to volume up', () => {
+            expect(mapKeyToAction(']')).toBe(ACTION_VOLUME_UP);
+        });
+        it('should map "[" to volume down', () => {
+            expect(mapKeyToAction('[')).toBe(ACTION_VOLUME_DOWN);
+        });
         it('should map ">" to speed up', () => {
             expect(mapKeyToAction('>')).toBe(ACTION_SPEED_UP);
         });
@@ -49,6 +60,12 @@ describe('content.js', () => {
     describe('mapActionToChange', () => {
         it('should return correct speed step for speed up', () => {
             expect(mapActionToChange(ACTION_SPEED_UP)).toBe(0.25);
+        });
+        it('should return correct volume step for volume up', () => {
+            expect(mapActionToChange(ACTION_VOLUME_UP)).toBe(0.1);
+        });
+        it('should return correct volume step for volume down', () => {
+            expect(mapActionToChange(ACTION_VOLUME_DOWN)).toBe(-0.1);
         });
         it('should return correct seek step for large seek forward', () => {
             expect(mapActionToChange(ACTION_SEEK_FWD_LARGE)).toBe(10);
@@ -136,6 +153,68 @@ describe('content.js', () => {
         it('should change speed', () => {
             runAction(media, { type: ACTION_SPEED_UP });
             expect(media.playbackRate).toBe(1.25);
+        });
+
+        it('should increase volume', () => {
+            media.volume = 0.5;
+            runAction(media, { type: ACTION_VOLUME_UP });
+            expect(media.volume).toBeCloseTo(0.6, 1);
+        });
+
+        it('should decrease volume', () => {
+            media.volume = 0.5;
+            runAction(media, { type: ACTION_VOLUME_DOWN });
+            expect(media.volume).toBeCloseTo(0.4, 1);
+        });
+
+        it('should not increase volume above 1', () => {
+            media.volume = 0.98;
+            runAction(media, { type: ACTION_VOLUME_UP });
+            expect(media.volume).toBeLessThanOrEqual(1);
+        });
+
+        it('should not decrease volume below 0', () => {
+            media.volume = 0.05;
+            runAction(media, { type: ACTION_VOLUME_DOWN });
+            expect(media.volume).toBeGreaterThanOrEqual(0);
+        });
+    });
+
+    describe('setMediaVolume', () => {
+        let media;
+        beforeEach(() => {
+            media = document.createElement('video');
+            media.volume = 0.5;
+            media.muted = false;
+        });
+
+        it('should set volume to specified value', () => {
+            setMediaVolume(media, 0.7);
+            expect(media.volume).toBe(0.7);
+        });
+
+        it('should clamp volume to max of 1', () => {
+            setMediaVolume(media, 1.5);
+            expect(media.volume).toBe(1);
+        });
+
+        it('should clamp volume to min of 0', () => {
+            setMediaVolume(media, -0.5);
+            expect(media.volume).toBe(0);
+        });
+
+        it('should unmute when increasing volume from 0', () => {
+            media.volume = 0;
+            media.muted = true;
+            setMediaVolume(media, 0.5);
+            expect(media.muted).toBe(false);
+        });
+
+        it('should not change volume if already at target', () => {
+            media.volume = 0.5;
+            const initialVolume = media.volume;
+            setMediaVolume(media, 0.5);
+            expect(media.volume).toBe(initialVolume);
         });
     });
 });
