@@ -461,3 +461,24 @@ function showOverlay(media, action = {}) {
         setTimeout(() => overlay.remove(), 250);
     }, 500);
 }
+
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = {
+        mapKeyToAction,
+        mapActionToChange,
+        mapActionToSeekPercentage,
+        getSupportedKeys,
+        findMedia,
+        getTargetMedia,
+        runAction,
+        // Constants used in tests or logic if needed, though typically we just test behavior
+        ACTION_PLAY_PAUSE,
+        ACTION_MUTE_UNMUTE,
+        ACTION_SPEED_UP,
+        ACTION_SPEED_DOWN,
+        ACTION_SEEK_FWD_LARGE,
+        ACTION_SEEK_BACK_LARGE,
+        ACTION_SEEK_FWD_SMALL,
+        ACTION_SEEK_BACK_SMALL
+    };
+}

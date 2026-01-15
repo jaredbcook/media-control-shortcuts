@@ -4,7 +4,7 @@
   "description": "Adds keyboard shortcuts to control media playback on any website. Compatible with most HTML5 video and audio players, including those inside Shadow DOMs and Iframes (where accessible).",
   "main": "content.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "vitest",
     "build": "node scripts/build.js",
     "release": "npm run build && node scripts/zip.js"
   },
@@ -22,6 +22,8 @@
   "homepage": "https://github.com/jaredbcook/media-control-shortcuts#readme",
   "devDependencies": {
     "archiver": "^7.0.1",
-    "fs-extra": "^11.3.3"
+    "fs-extra": "^11.3.3",
+    "jsdom": "^27.4.0",
+    "vitest": "^4.0.17"
   }
 }
