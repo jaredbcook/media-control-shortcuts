@@ -25,3 +25,4 @@ build/
 
 # Gemini
 .gemini/
+gha-creds-*.json
